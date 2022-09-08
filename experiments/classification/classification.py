@@ -121,7 +121,7 @@ def run():
         'num_train_epochs': 3,
         'evaluate_during_training_steps': 100,
         'save_eval_checkpoints': False,
-        'train_batch_size': 16,
+        'train_batch_size': 32,
         'eval_batch_size': 8,
         'overwrite_output_dir': True,
         'output_dir': output_path
