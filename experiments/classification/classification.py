@@ -10,9 +10,9 @@ from transformers import BertTokenizer
 from fuse.main_model_fuse import ModelLoadingInfo, load_model, fuse_models
 from utils.print_stat import print_information
 
-TRAIN_DATA_PATH = '../../data/ECHR_Dataset/EN_train/'
-TEST_DATA_PATH = '../../data/ECHR_Dataset/EN_test/'
-DEV_DATA_PATH = '../../data/ECHR_Dataset/EN_dev/'
+TRAIN_DATA_PATH = 'data/ECHR_Dataset/EN_train/'
+TEST_DATA_PATH = 'data/ECHR_Dataset/EN_test/'
+DEV_DATA_PATH = 'data/ECHR_Dataset/EN_dev/'
 
 # load training files
 training_files = os.listdir(TRAIN_DATA_PATH)
