@@ -221,10 +221,16 @@ def run():
     print('Final Results')
     print('=====================================================================')
 
-    print("Macro F1 Mean - {} | STD - {}".format(np.mean(macros),np.std(macros)))
-    print("Macro F1 Mean - {} | STD - {}".format(np.mean(micros),np.std(micros)))
+    macro_str = "Macro F1 Mean - {} | STD - {}\n".format(np.mean(macros), np.std(macros))
+    micro_str = "Macro F1 Mean - {} | STD - {}".format(np.mean(micros), np.std(micros))
+    print(macro_str)
+    print(micro_str)
 
     print('======================================================================')
+
+    with open('results.txt', 'w') as f:
+        f.write(macro_str + micro_str)
+
 
 if __name__ == '__main__':
     run()
