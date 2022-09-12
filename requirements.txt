@@ -2,4 +2,4 @@ transformers
 scikit-learn
 numpy
 pandas
-simpletransformers
+simpletransformers==0.60.0
