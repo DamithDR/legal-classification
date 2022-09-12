@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 
@@ -23,10 +24,8 @@ training_set = []
 test_set = []
 dev_set = []
 
-n_models = 3
 
-
-def sep_text_to_regions(df):
+def sep_text_to_regions(df, n_models=3):
     max_token_length = 400
 
     data_splits = {}
@@ -86,6 +85,15 @@ def sep_text_to_regions(df):
 
 
 def run():
+    parser = argparse.ArgumentParser(
+        description='''fuse multiple models ''')
+    parser.add_argument('--device_number', required=False, help='cuda device number', default=0)
+    parser.add_argument('--no_of_models', required=True, help='no of models to fuse', default=3)
+    parser.add_argument('--n_fold', required=True, help='n_fold predictions', default=3)
+    arguments = parser.parse_args()
+    n_models = int(arguments.no_of_models)
+    n_fold = int(arguments.n_fold)
+
     print(f'***Training Files Loading Started***')
     for file in training_files:
         with open(TRAIN_DATA_PATH + file, encoding='utf-8') as content:
@@ -109,18 +117,20 @@ def run():
     dev_df = pd.DataFrame(dev_set)
 
     # processed data
-    training_text_splits, training_label_splits, training_id_splits = sep_text_to_regions(train_df)
-    test_text_splits, test_label_splits, test_id_splits = sep_text_to_regions(test_df)
-    dev_text_splits, dev_label_splits, dev_id_splits = sep_text_to_regions(dev_df)
+    training_text_splits, training_label_splits, training_id_splits = sep_text_to_regions(train_df, n_models)
+    test_text_splits, test_label_splits, test_id_splits = sep_text_to_regions(test_df, n_models)
+    dev_text_splits, dev_label_splits, dev_id_splits = sep_text_to_regions(dev_df, n_models)
 
-    output_path = '../../outputs/'
-    fused_model_path = '../../outputs/fused_model/'
+    output_path = 'outputs/'
+    fused_model_path = 'outputs/fused_model/'
     train_args = {
         'evaluate_during_training': True,
         'logging_steps': 1000,
         'num_train_epochs': 3,
         'evaluate_during_training_steps': 100,
         'save_eval_checkpoints': False,
+        # 'manual_seed': 888888,
+        # 'manual_seed': 777777,
         'train_batch_size': 32,
         'eval_batch_size': 8,
         'overwrite_output_dir': True,
@@ -130,7 +140,8 @@ def run():
 
     if torch.cuda.is_available():
         torch.device('cuda')
-    #========================================================================
+        torch.cuda.set_device(int(arguments.device_number))
+        # ========================================================================
         # training data preparation
         print('training started')
         model_paths = []
@@ -141,7 +152,8 @@ def run():
             train_args['best_model_dir'] = model_path
             model_paths.append(model_path)
             model = ClassificationModel(
-                "bert", "nlpaueb/legal-bert-base-uncased", num_labels=2, use_cuda=torch.cuda.is_available(), args=train_args
+                "bert", "nlpaueb/legal-bert-base-uncased", num_labels=2, use_cuda=torch.cuda.is_available(),
+                args=train_args
             )
 
             model.train_model(df_train, eval_df=df_eval)
@@ -164,38 +176,55 @@ def run():
     tokenizer = BertTokenizer.from_pretrained('nlpaueb/legal-bert-base-uncased')
     tokenizer.save_pretrained(fused_model_path)
     print('fused model saved')
-    # predictions
-    print('predictions started')
-    general_model = ClassificationModel(
-        "bert", fused_model_path, use_cuda=torch.cuda.is_available(), args=train_args
-    )
-    results = []
 
-    for i in range(0, n_models):
-        df_test = pd.DataFrame({'text': test_text_splits[i], 'label': test_label_splits[i], 'id': test_id_splits[i]})
-        predictions, raw_outputs = general_model.predict(df_test['text'].tolist())
-        for id_score, zero_score, one_score in zip(test_id_splits[i], list(raw_outputs[:, 0]), list(raw_outputs[:, 1])):
-            results.append((id_score, zero_score, one_score))
+    print('Starting Predictions')
+    macros = []
+    micros = []
+    for fold in range(0, n_fold):
+        # predictions
+        print('Starting Prediction fold no : ' + str(fold))
 
-    score_results = pd.DataFrame(results, columns=['ids', 'scores_0', 'scores_1'])
-    final_scores = score_results.groupby(by=['ids']).mean()
+        general_model = ClassificationModel(
+            "bert", fused_model_path, use_cuda=torch.cuda.is_available(), args=train_args
+        )
+        results = []
 
-    final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
-    final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
+        for i in range(0, n_models):
+            df_test = pd.DataFrame(
+                {'text': test_text_splits[i], 'label': test_label_splits[i], 'id': test_id_splits[i]})
+            predictions, raw_outputs = general_model.predict(df_test['text'].tolist())
+            for id_score, zero_score, one_score in zip(test_id_splits[i], list(raw_outputs[:, 0]),
+                                                       list(raw_outputs[:, 1])):
+                results.append((id_score, zero_score, one_score))
 
-    test_df['gold'] = 1
-    test_df.loc[test_df['CONCLUSION'] == 'Inadmissible', 'gold'] = 0
-    test_df.loc[test_df['CONCLUSION'] == 'inadmissible', 'gold'] = 0
+        score_results = pd.DataFrame(results, columns=['ids', 'scores_0', 'scores_1'])
+        final_scores = score_results.groupby(by=['ids']).mean()
+        # final_scores = score_results.groupby(by=['ids']).max()
 
-    gold_answers = []
-    for doc_id in final_scores.index:
-        ans = test_df.loc[test_df['ITEMID'] == doc_id, 'gold']
-        gold_answers.append(list(ans)[0])
-    final_scores['gold'] = gold_answers
+        final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
+        final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
 
-    print_information(final_scores, 'prediction', 'gold')
-    print('abc')
+        test_df['gold'] = 1
+        test_df.loc[test_df['CONCLUSION'] == 'Inadmissible', 'gold'] = 0
+        test_df.loc[test_df['CONCLUSION'] == 'inadmissible', 'gold'] = 0
 
+        gold_answers = []
+        for doc_id in final_scores.index:
+            ans = test_df.loc[test_df['ITEMID'] == doc_id, 'gold']
+            gold_answers.append(list(ans)[0])
+        final_scores['gold'] = gold_answers
+
+        macro_f1, micro_f1 = print_information(final_scores, 'prediction', 'gold')
+        macros.append(macro_f1)
+        micros.append(micro_f1)
+
+    print('Final Results')
+    print('=====================================================================')
+
+    print("Macro F1 Mean - {} | STD - {}".format(np.mean(macros),np.std(macros)))
+    print("Macro F1 Mean - {} | STD - {}".format(np.mean(micros),np.std(micros)))
+
+    print('======================================================================')
 
 if __name__ == '__main__':
     run()
