@@ -1,4 +1,4 @@
-transformers
+transformers==4.16.2
 scikit-learn
 numpy
 pandas

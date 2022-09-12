@@ -96,20 +96,23 @@ def run():
 
     print(f'***Training Files Loading Started***')
     for file in training_files:
-        with open(TRAIN_DATA_PATH + file, encoding='utf-8') as content:
-            training_set.append(json.loads(content.read()))
+        content = open(TRAIN_DATA_PATH + file, encoding='utf-8')
+        training_set.append(json.loads(content.read()))
+        content.close()
     print(f'---Training Files Loading Finished---')
 
     print(f'***Dev Files Loading Started***')
     for file in dev_files:
-        with open(DEV_DATA_PATH + file, encoding='utf-8') as content:
-            dev_set.append(json.loads(content.read()))
+        content = open(DEV_DATA_PATH + file, encoding='utf-8')
+        dev_set.append(json.loads(content.read()))
+        content.close()
     print(f'---Dev Files Loading Finished---')
 
     print(f'***Test Files Loading Started***')
     for file in test_files:
-        with open(TEST_DATA_PATH + file, encoding='utf-8') as content:
-            test_set.append(json.loads(content.read()))
+        content = open(TEST_DATA_PATH + file, encoding='utf-8')
+        test_set.append(json.loads(content.read()))
+        content.close()
     print(f'---Test Files Loading Finished---')
 
     train_df = pd.DataFrame(training_set)
