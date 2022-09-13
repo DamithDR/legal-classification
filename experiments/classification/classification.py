@@ -11,10 +11,10 @@ from transformers import BertTokenizer
 from fuse.main_model_fuse import ModelLoadingInfo, load_model, fuse_models
 from utils.print_stat import print_information
 
-# import torch.multiprocessing
-#
-# # otherwise the shared memory is not enough so it throws an error
-# torch.multiprocessing.set_sharing_strategy('file_system')
+import torch.multiprocessing
+
+# otherwise the shared memory is not enough so it throws an error
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 TRAIN_DATA_PATH = 'data/ECHR_Dataset/EN_train/'
 TEST_DATA_PATH = 'data/ECHR_Dataset/EN_test/'
