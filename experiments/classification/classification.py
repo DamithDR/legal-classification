@@ -160,7 +160,7 @@ def run():
             train_args['best_model_dir'] = model_path
             model_paths.append(model_path)
             model = ClassificationModel(
-                "bert", "nlpaueb/legal-bert-base-uncased", num_labels=2, use_cuda=torch.cuda.is_available(),
+                "bert", "nlpaueb/legal-bert-base-uncased", use_cuda=torch.cuda.is_available(),
                 args=train_args
             )
 
