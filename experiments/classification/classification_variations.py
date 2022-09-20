@@ -139,7 +139,7 @@ def run():
     train_args = {
         'evaluate_during_training': True,
         'logging_steps': 1000,
-        'num_train_epochs': 3,
+        'num_train_epochs': 5,
         'evaluate_during_training_steps': 100,
         'save_eval_checkpoints': False,
         # 'manual_seed': 888888,
@@ -162,8 +162,8 @@ def run():
     #     model_path = output_path + 'model_' + str(i)
     #     df_train = pd.DataFrame({'text': training_text_splits[i], 'labels': training_label_splits[i]})
     #     df_eval = pd.DataFrame({'text': dev_text_splits[i], 'labels': dev_label_splits[i]})
-    #     full_df = pd.concat([df_train, df_eval])
-    #     df_train, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
+    #     # full_df = pd.concat([df_train, df_eval])
+    #     # df_train, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
     #     train_args['best_model_dir'] = model_path
     #     model_paths.append(model_path)
     #     model = ClassificationModel(
@@ -176,10 +176,10 @@ def run():
     #     model.save_model(output_dir=model_path)
     #     print('model saved')
     # print('split models saving finished')
-
-    # ========================================================================
-
-    model_paths = ['../../outputs/model_0/', '../../outputs/model_1/', '../../outputs/model_2/']
+    #
+    # # ========================================================================
+    #
+    model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
     # fusing multiple models
     print('model fusing started')
     roberta = ModelLoadingInfo(name=arguments.base_model, tokenizer_name=arguments.base_model,
@@ -192,7 +192,7 @@ def run():
     tokenizer = BertTokenizer.from_pretrained(arguments.base_model)
     tokenizer.save_pretrained(fused_model_path)
     print('fused model saved')
-
+    #
     # # load the saved model
     # train_args['best_model_dir'] = fused_finetuned_model_path
     # general_model = ClassificationModel(
@@ -208,16 +208,16 @@ def run():
     #     df_eval = pd.concat([df_eval, eval])
     #     df_finetune_training = pd.concat([df_finetune_training, training_chunk])
     # # finetune model
-    # full_df = pd.concat([df_finetune_training, df_eval])
-    # df_finetune_training, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
+    # # full_df = pd.concat([df_finetune_training, df_eval])
+    # # df_finetune_training, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
     # general_model.train_model(df_finetune_training, eval_df=df_eval)
     # general_model.save_model(output_dir=fused_finetuned_model_path)
-    #
+
     # fine_tuned_model = general_model  # to use directly
     #
-    # # fine_tuned_model = ClassificationModel(
-    # #     "bert", fused_finetuned_model_path, use_cuda=torch.cuda.is_available(), args=train_args
-    # # )
+    # fine_tuned_model = ClassificationModel(
+    #     "bert", fused_finetuned_model_path, use_cuda=torch.cuda.is_available(), args=train_args
+    # )
     #
     # print('Starting Predictions')
     # macros = []
@@ -242,8 +242,8 @@ def run():
     #                     results.append((id_score, zero_score, one_score))
     #
     #             score_results = pd.DataFrame(results, columns=['ids', 'scores_0', 'scores_1'])
-    #             final_scores = score_results.groupby(by=['ids']).mean()
-    #             # final_scores = score_results.groupby(by=['ids']).max()
+    #             # final_scores = score_results.groupby(by=['ids']).mean()
+    #             final_scores = score_results.groupby(by=['ids']).max()
     #
     #             final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
     #             final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
