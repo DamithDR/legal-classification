@@ -17,10 +17,10 @@ from utils.print_stat import print_information
 from datasets import load_dataset
 
 
-# import torch.multiprocessing
+import torch.multiprocessing
 
 # otherwise the shared memory is not enough so it throws an error
-# torch.multiprocessing.set_sharing_strategy('file_system')
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 def sep_text_to_regions(df, n_models=3):
@@ -154,33 +154,33 @@ def run():
     if torch.cuda.is_available():
         torch.device('cuda')
         torch.cuda.set_device(int(arguments.device_number))
+    # ========================================================================
+    # training data preparation
+    print('training started')
+    model_paths = []
+    for i in range(0, n_models):
+        model_path = output_path + 'model_' + str(i)
+        df_train = pd.DataFrame({'text': training_text_splits[i], 'labels': training_label_splits[i]})
+        df_eval = pd.DataFrame({'text': dev_text_splits[i], 'labels': dev_label_splits[i]})
+        # full_df = pd.concat([df_train, df_eval])
+        # df_train, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
+        train_args['best_model_dir'] = model_path
+        model_paths.append(model_path)
+        model = ClassificationModel(
+            "bert", arguments.base_model, use_cuda=torch.cuda.is_available(),
+            args=train_args
+        )
+
+        model.train_model(df_train, eval_df=df_eval)
+
+        model.save_model(output_dir=model_path)
+        print('model saved')
+    print('split models saving finished')
+    #
     # # ========================================================================
-    # # training data preparation
-    # print('training started')
-    # model_paths = []
-    # for i in range(0, n_models):
-    #     model_path = output_path + 'model_' + str(i)
-    #     df_train = pd.DataFrame({'text': training_text_splits[i], 'labels': training_label_splits[i]})
-    #     df_eval = pd.DataFrame({'text': dev_text_splits[i], 'labels': dev_label_splits[i]})
-    #     # full_df = pd.concat([df_train, df_eval])
-    #     # df_train, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
-    #     train_args['best_model_dir'] = model_path
-    #     model_paths.append(model_path)
-    #     model = ClassificationModel(
-    #         "bert", arguments.base_model, use_cuda=torch.cuda.is_available(),
-    #         args=train_args
-    #     )
     #
-    #     model.train_model(df_train, eval_df=df_eval)
-    #
-    #     model.save_model(output_dir=model_path)
-    #     print('model saved')
-    # print('split models saving finished')
-    #
-    # # ========================================================================
-    #
-    model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
-    # fusing multiple models
+    # model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
+    # # fusing multiple models
     print('model fusing started')
     roberta = ModelLoadingInfo(name=arguments.base_model, tokenizer_name=arguments.base_model,
                                classification=True)
@@ -192,84 +192,88 @@ def run():
     tokenizer = BertTokenizer.from_pretrained(arguments.base_model)
     tokenizer.save_pretrained(fused_model_path)
     print('fused model saved')
-    #
-    # # load the saved model
-    # train_args['best_model_dir'] = fused_finetuned_model_path
-    # general_model = ClassificationModel(
-    #     "bert", fused_model_path, use_cuda=torch.cuda.is_available(), args=train_args
-    # )
-    #
-    # df_eval = pd.DataFrame()
-    # df_finetune_training = pd.DataFrame()
-    # # further fine tuning - this step is important
-    # for i in range(0, n_models):
-    #     training_chunk = pd.DataFrame({'text': finetune_text_splits[i], 'labels': finetune_label_splits[i]})
-    #     eval = pd.DataFrame({'text': dev_text_splits[i], 'labels': dev_label_splits[i]})
-    #     df_eval = pd.concat([df_eval, eval])
-    #     df_finetune_training = pd.concat([df_finetune_training, training_chunk])
-    # # finetune model
-    # # full_df = pd.concat([df_finetune_training, df_eval])
-    # # df_finetune_training, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
-    # general_model.train_model(df_finetune_training, eval_df=df_eval)
-    # general_model.save_model(output_dir=fused_finetuned_model_path)
 
-    # fine_tuned_model = general_model  # to use directly
+    # load the saved model
+    train_args['best_model_dir'] = fused_finetuned_model_path
+    train_args['learning_rate'] = 1e-04
+
+    general_model = ClassificationModel(
+        "bert", fused_model_path, use_cuda=torch.cuda.is_available(), args=train_args
+    )
+
+    df_eval = pd.DataFrame()
+    df_finetune_training = pd.DataFrame()
+    # further fine tuning - this step is important
+    for i in range(0, n_models):
+        training_chunk = pd.DataFrame({'text': finetune_text_splits[i], 'labels': finetune_label_splits[i]})
+        eval = pd.DataFrame({'text': dev_text_splits[i], 'labels': dev_label_splits[i]})
+        df_eval = pd.concat([df_eval, eval])
+        df_finetune_training = pd.concat([df_finetune_training, training_chunk])
+    # finetune model
+    # full_df = pd.concat([df_finetune_training, df_eval])
+    # df_finetune_training, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
+
+
+    general_model.train_model(df_finetune_training, eval_df=df_eval)
+    general_model.save_model(output_dir=fused_finetuned_model_path)
+
+    fine_tuned_model = general_model  # to use directly
     #
     # fine_tuned_model = ClassificationModel(
     #     "bert", fused_finetuned_model_path, use_cuda=torch.cuda.is_available(), args=train_args
     # )
-    #
-    # print('Starting Predictions')
-    # macros = []
-    # micros = []
-    #
-    # with open('out.txt', 'w') as f:
-    #     with redirect_stdout(f):
-    #         for fold in range(0, n_fold):
-    #             # predictions
-    #             print('Starting Prediction fold no : ' + str(fold))
-    #
-    #             results = []
-    #
-    #             for i in range(0, n_models):
-    #                 df_test = pd.DataFrame(
-    #                     {'text': test_text_splits[i], 'labels': test_label_splits[i], 'id': test_id_splits[i]})
-    #                 predictions, raw_outputs = fine_tuned_model.predict(df_test['text'].tolist())
-    #                 probabilities = softmax(raw_outputs, axis=1)
-    #
-    #                 for id_score, zero_score, one_score in zip(test_id_splits[i], list(probabilities[:, 0]),
-    #                                                            list(probabilities[:, 1])):
-    #                     results.append((id_score, zero_score, one_score))
-    #
-    #             score_results = pd.DataFrame(results, columns=['ids', 'scores_0', 'scores_1'])
-    #             # final_scores = score_results.groupby(by=['ids']).mean()
-    #             final_scores = score_results.groupby(by=['ids']).max()
-    #
-    #             final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
-    #             final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
-    #
-    #             gold_answers = []
-    #             for doc_id in final_scores.index:
-    #                 ans = test_df.loc[test_df.index == doc_id, 'labels']
-    #                 gold_answers.append(list(ans)[0])
-    #             final_scores['gold'] = gold_answers
-    #
-    #             macro_f1, micro_f1 = print_information(final_scores, 'prediction', 'gold')
-    #             macros.append(macro_f1)
-    #             micros.append(micro_f1)
-    #
-    #         print('Final Results')
-    #         print('=====================================================================')
-    #
-    #         macro_str = "Macro F1 Mean - {} | STD - {}\n".format(np.mean(macros), np.std(macros))
-    #         micro_str = "Micro F1 Mean - {} | STD - {}".format(np.mean(micros), np.std(micros))
-    #         print(macro_str)
-    #         print(micro_str)
-    #
-    #         print('======================================================================')
-    #
-    #         print(macro_str + micro_str)
-    # print("Done")
+
+    print('Starting Predictions')
+    macros = []
+    micros = []
+
+    with open('out.txt', 'w') as f:
+        with redirect_stdout(f):
+            for fold in range(0, n_fold):
+                # predictions
+                print('Starting Prediction fold no : ' + str(fold))
+
+                results = []
+
+                for i in range(0, n_models):
+                    df_test = pd.DataFrame(
+                        {'text': test_text_splits[i], 'labels': test_label_splits[i], 'id': test_id_splits[i]})
+                    predictions, raw_outputs = fine_tuned_model.predict(df_test['text'].tolist())
+                    probabilities = softmax(raw_outputs, axis=1)
+
+                    for id_score, zero_score, one_score in zip(test_id_splits[i], list(probabilities[:, 0]),
+                                                               list(probabilities[:, 1])):
+                        results.append((id_score, zero_score, one_score))
+
+                score_results = pd.DataFrame(results, columns=['ids', 'scores_0', 'scores_1'])
+                # final_scores = score_results.groupby(by=['ids']).mean()
+                final_scores = score_results.groupby(by=['ids']).max()
+
+                final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
+                final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
+
+                gold_answers = []
+                for doc_id in final_scores.index:
+                    ans = test_df.loc[test_df.index == doc_id, 'labels']
+                    gold_answers.append(list(ans)[0])
+                final_scores['gold'] = gold_answers
+
+                macro_f1, micro_f1 = print_information(final_scores, 'prediction', 'gold')
+                macros.append(macro_f1)
+                micros.append(micro_f1)
+
+            print('Final Results')
+            print('=====================================================================')
+
+            macro_str = "Macro F1 Mean - {} | STD - {}\n".format(np.mean(macros), np.std(macros))
+            micro_str = "Micro F1 Mean - {} | STD - {}".format(np.mean(micros), np.std(micros))
+            print(macro_str)
+            print(micro_str)
+
+            print('======================================================================')
+
+            print(macro_str + micro_str)
+    print("Done")
 
 
 if __name__ == '__main__':
