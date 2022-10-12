@@ -10,12 +10,11 @@ import torch.cuda
 from scipy.special import softmax
 from simpletransformers.classification import ClassificationModel
 from sklearn.model_selection import train_test_split
-from transformers import BertTokenizer
+from transformers import AutoTokenizer
 
 from fuse.main_model_fuse import ModelLoadingInfo, load_model, fuse_models
 from utils.print_stat import print_information
 from datasets import load_dataset
-
 
 import torch.multiprocessing
 
@@ -189,7 +188,7 @@ def run():
     fused_model = fuse_models(base_model, models_to_fuse)
     # saving fused model for predictions
     fused_model.save_pretrained(fused_model_path)
-    tokenizer = BertTokenizer.from_pretrained(arguments.base_model)
+    tokenizer = AutoTokenizer.from_pretrained(arguments.base_model)
     tokenizer.save_pretrained(fused_model_path)
     print('fused model saved')
 
@@ -212,7 +211,6 @@ def run():
     # finetune model
     # full_df = pd.concat([df_finetune_training, df_eval])
     # df_finetune_training, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
-
 
     general_model.train_model(df_finetune_training, eval_df=df_eval)
     general_model.save_model(output_dir=fused_finetuned_model_path)
