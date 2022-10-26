@@ -252,7 +252,7 @@ def run():
     df_finetune_training['prefix'] = TASK_NAME
     df_eval['prefix'] = TASK_NAME
 
-    general_model.train_model(df_finetune_training, eval_df=df_eval)
+    general_model.train_model(df_finetune_training, eval_data=df_eval)
     general_model.save_model(output_dir=fused_finetuned_model_path)
 
     fine_tuned_model = general_model  # to use directly
