@@ -37,6 +37,7 @@ model_args.evaluate_generated_text = True
 model_args.evaluate_during_training = True
 model_args.evaluate_during_training_verbose = True
 model_args.use_multiprocessing = False
+model_args.overwrite_output_dir = True
 
 model = T5Model("t5", "t5-base", args=model_args)
 
