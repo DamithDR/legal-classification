@@ -146,7 +146,6 @@ def run():
         "max_seq_length": 512,
         "eval_batch_size": 32,
         "use_multiprocessing": False,
-        "num_beams": 2,
         "do_sample": True,
         "max_length": 50,
         "top_k": 50,
