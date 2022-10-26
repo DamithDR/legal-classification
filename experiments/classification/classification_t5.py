@@ -14,7 +14,7 @@ from simpletransformers.t5 import T5Model
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
 
-from fuse.main_model_fuse import ModelLoadingInfoT5, load_model, fuse_models
+from fuse.main_model_fuse_t5 import ModelLoadingInfoT5, load_model, fuse_models
 from utils.print_stat import print_information
 from datasets import load_dataset
 
