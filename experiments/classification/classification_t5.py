@@ -178,44 +178,43 @@ def run():
         torch.cuda.set_device(int(arguments.device_number))
     # ========================================================================
     # training data preparation
-    print('training started')
-    args = T5Args()
-    model_paths = []
-    for i in range(0, n_models):
-        model_path = output_path + 'model_' + str(i)
-        df_train = pd.DataFrame({'input_text': training_text_splits[i], 'target_text': training_label_splits[i]})
-        df_train['target_text'] = df_train['target_text'].apply(str)
-        df_eval = pd.DataFrame({'input_text': dev_text_splits[i], 'target_text': dev_label_splits[i]})
-        df_eval['target_text'] = df_eval['target_text'].apply(str)
-        df_train['prefix'] = TASK_NAME
-        df_eval['prefix'] = TASK_NAME
-        # full_df = pd.concat([df_train, df_eval])
-        # df_train, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
-        train_args['best_model_dir'] = model_path
-        model_paths.append(model_path)
-        # training_df = pd.DataFrame()
-        # development_df = pd.DataFrame()
-        # for train_sample, train_label in zip(training_text_splits[i], training_label_splits[i]):
-        #     training_df.append([TASK_NAME, train_sample, train_label])
-        # for dev_sample, dev_label in zip(dev_text_splits[i], dev_label_splits[i]):
-        #     development_df.append([TASK_NAME, dev_sample, dev_label])
-
-        model = T5Model(
-            "t5",
-            arguments.base_model,
-            use_cuda=torch.cuda.is_available(),
-            args=train_args
-        )
-
-        model.train_model(df_train, eval_data=df_eval)
-
-        model.save_model(output_dir=model_path)
-        print('model saved')
-    print('split models saving finished')
+    # print('training started')
+    # model_paths = []
+    # for i in range(0, n_models):
+    #     model_path = output_path + 'model_' + str(i)
+    #     df_train = pd.DataFrame({'input_text': training_text_splits[i], 'target_text': training_label_splits[i]})
+    #     df_train['target_text'] = df_train['target_text'].apply(str)
+    #     df_eval = pd.DataFrame({'input_text': dev_text_splits[i], 'target_text': dev_label_splits[i]})
+    #     df_eval['target_text'] = df_eval['target_text'].apply(str)
+    #     df_train['prefix'] = TASK_NAME
+    #     df_eval['prefix'] = TASK_NAME
+    #     # full_df = pd.concat([df_train, df_eval])
+    #     # df_train, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
+    #     train_args['best_model_dir'] = model_path
+    #     model_paths.append(model_path)
+    #     # training_df = pd.DataFrame()
+    #     # development_df = pd.DataFrame()
+    #     # for train_sample, train_label in zip(training_text_splits[i], training_label_splits[i]):
+    #     #     training_df.append([TASK_NAME, train_sample, train_label])
+    #     # for dev_sample, dev_label in zip(dev_text_splits[i], dev_label_splits[i]):
+    #     #     development_df.append([TASK_NAME, dev_sample, dev_label])
+    #
+    #     model = T5Model(
+    #         "t5",
+    #         arguments.base_model,
+    #         use_cuda=torch.cuda.is_available(),
+    #         args=train_args
+    #     )
+    #
+    #     model.train_model(df_train, eval_data=df_eval)
+    #
+    #     model.save_model(output_dir=model_path)
+    #     print('model saved')
+    # print('split models saving finished')
     #
     # # ========================================================================
     #
-    # model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
+    model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
     # # fusing multiple models
     print('model fusing started')
     model_load = ModelLoadingInfo(name=arguments.base_model, tokenizer_name=arguments.base_model,
