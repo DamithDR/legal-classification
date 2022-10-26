@@ -149,7 +149,7 @@ def run():
         "num_beams": None,
         "do_sample": True,
         "max_length": 50,
-        "top_k": 50,
+        "top_k": 1,
         "top_p": 0.10,
         "num_return_sequences": 1,
         'train_batch_size': 8,
