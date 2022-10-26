@@ -150,28 +150,13 @@ def run():
         "do_sample": True,
         "max_length": 50,
         "top_k": 50,
-        "top_p": 0.95,
-        # "num_return_sequences": 3,
+        "top_p": 0.55,
+        "num_return_sequences": 1,
         'train_batch_size': 8,
         'eval_batch_size': 8,
         'save_eval_checkpoints': False,
         'evaluate_during_training': True,
     }
-
-    # train_args = {
-    #     'evaluate_during_training': True,
-    #     'logging_steps': 1000,
-    #     'num_train_epochs': 5,
-    #     'evaluate_during_training_steps': 100,
-    #     'save_eval_checkpoints': False,
-    #     # 'manual_seed': 888888,
-    #     # 'manual_seed': 777,
-    #     'train_batch_size': 32,
-    #     'eval_batch_size': 8,
-    #     'overwrite_output_dir': True,
-    #     'output_dir': output_path
-    #
-    # }
 
     if torch.cuda.is_available():
         torch.device('cuda')
