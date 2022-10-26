@@ -8,8 +8,8 @@ transformers_logger = logging.getLogger("transformers")
 transformers_logger.setLevel(logging.WARNING)
 
 train_data = [
-    ["binary classification", "Anakin was Luke's father", 1],
-    ["binary classification", "Luke was a Sith Lord", 0],
+    ["binary classification", "Anakin was Luke's father", '1'],
+    ["binary classification", "Luke was a Sith Lord", '0'],
     ["generate question",
      "Star Wars is an American epic space-opera media franchise created by George Lucas, which began with the eponymous 1977 film and quickly became a worldwide pop-culture phenomenon",
      "Who created the Star Wars franchise?"],
@@ -19,8 +19,8 @@ train_df = pd.DataFrame(train_data)
 train_df.columns = ["prefix", "input_text", "target_text"]
 
 eval_data = [
-    ["binary classification", "Leia was Luke's sister", 1],
-    ["binary classification", "Han was a Sith Lord", 0],
+    ["binary classification", "Leia was Luke's sister", '1'],
+    ["binary classification", "Han was a Sith Lord", '0'],
     ["generate question",
      "In 2020, the Star Wars franchise's total value was estimated at US$70 billion, and it is currently the fifth-highest-grossing media franchise of all time.",
      "What is the total value of the Star Wars franchise?"],
