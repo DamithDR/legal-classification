@@ -214,54 +214,57 @@ def run():
     #
     # # ========================================================================
     #
-    model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
-    # # fusing multiple models
-    print('model fusing started')
-    model_load = ModelLoadingInfoT5(name=arguments.base_model, tokenizer_name=arguments.base_model,
-                                  classification=True)
-    models_to_fuse = [ModelLoadingInfoT5(name=model, tokenizer_name=model, classification=True) for model in model_paths]
-    base_model = load_model(model_load)
-    fused_model = fuse_models(base_model, models_to_fuse)
-    # saving fused model for predictions
-    fused_model.save_pretrained(fused_model_path)
-    tokenizer = AutoTokenizer.from_pretrained(arguments.base_model)
-    tokenizer.save_pretrained(fused_model_path)
-    print('fused model saved')
+    # model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
+    # # # fusing multiple models
+    # print('model fusing started')
+    # model_load = ModelLoadingInfoT5(name=arguments.base_model, tokenizer_name=arguments.base_model,
+    #                               classification=True)
+    # models_to_fuse = [ModelLoadingInfoT5(name=model, tokenizer_name=model, classification=True) for model in model_paths]
+    # base_model = load_model(model_load)
+    # fused_model = fuse_models(base_model, models_to_fuse)
+    # # saving fused model for predictions
+    # fused_model.save_pretrained(fused_model_path)
+    # tokenizer = AutoTokenizer.from_pretrained(arguments.base_model)
+    # tokenizer.save_pretrained(fused_model_path)
+    # print('fused model saved')
+    #
+    # # load the saved model
+    # train_args['best_model_dir'] = fused_finetuned_model_path
+    # train_args['learning_rate'] = 1e-04
+    #
+    # general_model = T5Model(
+    #     "t5",
+    #     fused_model_path,
+    #     use_cuda=torch.cuda.is_available(),
+    #     args=train_args
+    # )
+    #
+    # df_eval = pd.DataFrame()
+    # df_finetune_training = pd.DataFrame()
+    #
+    # # further fine tuning - this step is important
+    # for i in range(0, n_models):
+    #     training_chunk = pd.DataFrame({'input_text': finetune_text_splits[i], 'target_text': finetune_label_splits[i]})
+    #     eval_chunk = pd.DataFrame({'input_text': dev_text_splits[i], 'target_text': dev_label_splits[i]})
+    #     df_finetune_training = pd.concat([df_finetune_training, training_chunk])
+    #     df_eval = pd.concat([df_eval, eval_chunk])
+    #
+    # df_finetune_training['prefix'] = TASK_NAME
+    # df_eval['prefix'] = TASK_NAME
+    # df_finetune_training['target_text'] = df_finetune_training['target_text'].apply(str)
+    # df_eval['target_text'] = df_eval['target_text'].apply(str)
+    #
+    # general_model.train_model(df_finetune_training, eval_data=df_eval)
+    # general_model.save_model(output_dir=fused_finetuned_model_path)
 
-    # load the saved model
-    train_args['best_model_dir'] = fused_finetuned_model_path
-    train_args['learning_rate'] = 1e-04
-
-    general_model = T5Model(
+    # fine_tuned_model = general_model  # to use directly
+    fine_tuned_model = T5Model(
         "t5",
-        fused_model_path,
+        fused_finetuned_model_path,
+        # "t5-small",
         use_cuda=torch.cuda.is_available(),
         args=train_args
     )
-
-    df_eval = pd.DataFrame()
-    df_finetune_training = pd.DataFrame()
-
-    # further fine tuning - this step is important
-    for i in range(0, n_models):
-        training_chunk = pd.DataFrame({'input_text': finetune_text_splits[i], 'target_text': finetune_label_splits[i]})
-        eval_chunk = pd.DataFrame({'input_text': dev_text_splits[i], 'target_text': dev_label_splits[i]})
-        df_finetune_training = pd.concat([df_finetune_training, training_chunk])
-        df_eval = pd.concat([df_eval, eval_chunk])
-
-    df_finetune_training['prefix'] = TASK_NAME
-    df_eval['prefix'] = TASK_NAME
-    df_finetune_training['target_text'] = df_finetune_training['target_text'].apply(str)
-    df_eval['target_text'] = df_eval['target_text'].apply(str)
-
-    general_model.train_model(df_finetune_training, eval_data=df_eval)
-    general_model.save_model(output_dir=fused_finetuned_model_path)
-
-    fine_tuned_model = general_model  # to use directly
-    #
-    # fine_tuned_model = ClassificationModel(
-    #     "bert", fused_finetuned_model_path, use_cuda=torch.cuda.is_available(), args=train_args
-    # )
 
     print('Starting Predictions')
     macros = []
@@ -277,7 +280,8 @@ def run():
         for i in range(0, n_models):
             test_list = []
             for test_sample, test_label in zip(test_text_splits[i], test_label_splits[i]):
-                test_list.append([TASK_NAME + ":" + test_sample])
+                test_row = TASK_NAME + ":" + test_sample
+                test_list.append(test_row)
 
             raw_outputs = fine_tuned_model.predict(test_list)
             # probabilities = softmax(raw_outputs, axis=1)
