@@ -31,7 +31,7 @@ eval_df.columns = ["prefix", "input_text", "target_text"]
 
 # Configure the model
 model_args = T5Args()
-model_args.num_train_epochs = 5
+model_args.num_train_epochs = 10
 model_args.no_save = True
 model_args.evaluate_generated_text = True
 model_args.evaluate_during_training = True
@@ -39,7 +39,7 @@ model_args.evaluate_during_training_verbose = True
 model_args.use_multiprocessing = False
 model_args.overwrite_output_dir = True
 
-model = T5Model("t5", "t5-base", args=model_args)
+model = T5Model("t5", "t5-small", args=model_args)
 
 # Train the model
 model.train_model(train_df, eval_data=eval_df)
@@ -49,8 +49,8 @@ result = model.eval_model(eval_df)
 
 # Make predictions with the model
 to_predict = [
-    "binary classification: Luke blew up the first Death Star",
-    "generate question: In 1971, George Lucas wanted to film an adaptation of the Flash Gordon serial, but could not obtain the rights, so he began developing his own space opera.",
+    "binary classification:Luke blew up the first Death Star",
+    "generate question:In 1971, George Lucas wanted to film an adaptation of the Flash Gordon serial, but could not obtain the rights, so he began developing his own space opera.",
 ]
 
 preds = model.predict(to_predict)
