@@ -251,6 +251,8 @@ def run():
 
     df_finetune_training['prefix'] = TASK_NAME
     df_eval['prefix'] = TASK_NAME
+    df_finetune_training['target_text'] = df_finetune_training['target_text'].apply(str)
+    df_eval['target_text'] = df_eval['target_text'].apply(str)
 
     general_model.train_model(df_finetune_training, eval_data=df_eval)
     general_model.save_model(output_dir=fused_finetuned_model_path)
