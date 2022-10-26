@@ -14,7 +14,7 @@ from simpletransformers.t5 import T5Model
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
 
-from fuse.main_model_fuse import ModelLoadingInfo, load_model, fuse_models
+from fuse.main_model_fuse import ModelLoadingInfoT5, load_model, fuse_models
 from utils.print_stat import print_information
 from datasets import load_dataset
 
@@ -217,9 +217,9 @@ def run():
     model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
     # # fusing multiple models
     print('model fusing started')
-    model_load = ModelLoadingInfo(name=arguments.base_model, tokenizer_name=arguments.base_model,
+    model_load = ModelLoadingInfoT5(name=arguments.base_model, tokenizer_name=arguments.base_model,
                                   classification=True)
-    models_to_fuse = [ModelLoadingInfo(name=model, tokenizer_name=model, classification=True) for model in model_paths]
+    models_to_fuse = [ModelLoadingInfoT5(name=model, tokenizer_name=model, classification=True) for model in model_paths]
     base_model = load_model(model_load)
     fused_model = fuse_models(base_model, models_to_fuse)
     # saving fused model for predictions
