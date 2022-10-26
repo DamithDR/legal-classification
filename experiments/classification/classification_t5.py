@@ -94,7 +94,7 @@ def run():
     parser.add_argument('--no_of_models', required=True, help='no of models to fuse', default=3)
     parser.add_argument('--n_fold', required=True, help='n_fold predictions', default=3)
     parser.add_argument('--base_model', required=False, help='n_fold predictions',
-                        default='nlpaueb/legal-bert-base-uncased')
+                        default='t5-base')
     arguments = parser.parse_args()
     n_models = int(arguments.no_of_models)
     n_fold = int(arguments.n_fold)
@@ -207,7 +207,7 @@ def run():
             args=train_args
         )
 
-        model.train_model(df_train, eval_df=df_eval)
+        model.train_model(df_train, eval_data=df_eval)
 
         model.save_model(output_dir=model_path)
         print('model saved')
