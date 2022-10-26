@@ -183,18 +183,22 @@ def run():
     model_paths = []
     for i in range(0, n_models):
         model_path = output_path + 'model_' + str(i)
-        # df_train = pd.DataFrame({'text': training_text_splits[i], 'labels': training_label_splits[i]})
-        # df_eval = pd.DataFrame({'text': dev_text_splits[i], 'labels': dev_label_splits[i]})
+        df_train = pd.DataFrame({'input_text': training_text_splits[i], 'target_text': training_label_splits[i]})
+        df_train['target_text'] = df_train['target_text'].apply(str)
+        df_eval = pd.DataFrame({'input_text': dev_text_splits[i], 'target_text': dev_label_splits[i]})
+        df_eval['target_text'] = df_eval['target_text'].apply(str)
+        df_train['prefix'] = TASK_NAME
+        df_eval['prefix'] = TASK_NAME
         # full_df = pd.concat([df_train, df_eval])
         # df_train, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
         train_args['best_model_dir'] = model_path
         model_paths.append(model_path)
-        training_df = pd.DataFrame()
-        development_df = pd.DataFrame()
-        for train_sample, train_label in zip(training_text_splits[i], training_label_splits[i]):
-            training_df.append([TASK_NAME, train_sample, train_label])
-        for dev_sample, dev_label in zip(dev_text_splits[i], dev_label_splits[i]):
-            development_df.append([TASK_NAME, dev_sample, dev_label])
+        # training_df = pd.DataFrame()
+        # development_df = pd.DataFrame()
+        # for train_sample, train_label in zip(training_text_splits[i], training_label_splits[i]):
+        #     training_df.append([TASK_NAME, train_sample, train_label])
+        # for dev_sample, dev_label in zip(dev_text_splits[i], dev_label_splits[i]):
+        #     development_df.append([TASK_NAME, dev_sample, dev_label])
 
         model = T5Model(
             "t5",
@@ -203,7 +207,7 @@ def run():
             args=train_args
         )
 
-        model.train_model(training_df, eval_df=development_df)
+        model.train_model(df_train, eval_df=df_eval)
 
         model.save_model(output_dir=model_path)
         print('model saved')
@@ -238,12 +242,16 @@ def run():
 
     df_eval = pd.DataFrame()
     df_finetune_training = pd.DataFrame()
+
     # further fine tuning - this step is important
     for i in range(0, n_models):
-        for finetune_sample, finetune_label in zip(finetune_text_splits[i], finetune_label_splits[i]):
-            df_finetune_training.append([TASK_NAME, finetune_sample, finetune_label])
-        for dev_sample, dev_label in zip(dev_text_splits[i], dev_label_splits[i]):
-            df_eval.append([TASK_NAME, dev_sample, dev_label])
+        training_chunk = pd.DataFrame({'input_text': finetune_text_splits[i], 'target_text': finetune_label_splits[i]})
+        eval_chunk = pd.DataFrame({'input_text': dev_text_splits[i], 'target_text': dev_label_splits[i]})
+        df_finetune_training = pd.concat([df_finetune_training, training_chunk])
+        df_eval = pd.concat([df_eval, eval_chunk])
+
+    df_finetune_training['prefix'] = TASK_NAME
+    df_eval['prefix'] = TASK_NAME
 
     general_model.train_model(df_finetune_training, eval_df=df_eval)
     general_model.save_model(output_dir=fused_finetuned_model_path)
@@ -258,54 +266,59 @@ def run():
     macros = []
     micros = []
 
-    with open('out.txt', 'w') as f:
-        with redirect_stdout(f):
-            for fold in range(0, n_fold):
-                # predictions
-                print('Starting Prediction fold no : ' + str(fold))
+    # with open('out.txt', 'w') as f:
+    #     with redirect_stdout(f):
+    for fold in range(0, n_fold):
+        # predictions
+        print('Starting Prediction fold no : ' + str(fold))
 
-                results = []
+        results = []
+        for i in range(0, n_models):
+            test_list = []
+            for test_sample, test_label in zip(test_text_splits[i], test_label_splits[i]):
+                test_list.append([TASK_NAME + ":" + test_sample])
 
-                for i in range(0, n_models):
-                    test_list = []
-                    for test_sample, test_label in zip(test_text_splits[i], test_label_splits[i]):
-                        test_list.append([TASK_NAME + ": " + test_sample])
+            raw_outputs = fine_tuned_model.predict(test_list)
+            # probabilities = softmax(raw_outputs, axis=1)
 
-                    raw_outputs = fine_tuned_model.predict(test_list)
-                    probabilities = softmax(raw_outputs, axis=1)
+            # for id_score, zero_score, one_score in zip(test_id_splits[i], list(probabilities[:, 0]),
+            #                                            list(probabilities[:, 1])):
+            #     results.append((id_score, zero_score, one_score))
+            for id_score, prediction in zip(test_id_splits[i], raw_outputs):
+                try:
+                    results.append((id_score, int(prediction)))
+                except:
+                    print("wrong output cannot convert to int " + prediction)
+                    print("An exception occurred")
 
-                    for id_score, zero_score, one_score in zip(test_id_splits[i], list(probabilities[:, 0]),
-                                                               list(probabilities[:, 1])):
-                        results.append((id_score, zero_score, one_score))
+        score_results = pd.DataFrame(results, columns=['ids', 'prediction'])
+        # final_scores = score_results.groupby(by=['ids']).mean()
+        final_scores = score_results.groupby(by=['ids']).max()
 
-                score_results = pd.DataFrame(results, columns=['ids', 'scores_0', 'scores_1'])
-                # final_scores = score_results.groupby(by=['ids']).mean()
-                final_scores = score_results.groupby(by=['ids']).max()
+        # final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
+        # final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
 
-                final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
-                final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
+        gold_answers = []
+        for doc_id in final_scores.index:
+            ans = test_df.loc[test_df.index == doc_id, 'labels']
+            gold_answers.append(list(ans)[0])
+        final_scores['gold'] = gold_answers
 
-                gold_answers = []
-                for doc_id in final_scores.index:
-                    ans = test_df.loc[test_df.index == doc_id, 'labels']
-                    gold_answers.append(list(ans)[0])
-                final_scores['gold'] = gold_answers
+        macro_f1, micro_f1 = print_information(final_scores, 'prediction', 'gold')
+        macros.append(macro_f1)
+        micros.append(micro_f1)
 
-                macro_f1, micro_f1 = print_information(final_scores, 'prediction', 'gold')
-                macros.append(macro_f1)
-                micros.append(micro_f1)
+    print('Final Results')
+    print('=====================================================================')
 
-            print('Final Results')
-            print('=====================================================================')
+    macro_str = "Macro F1 Mean - {} | STD - {}\n".format(np.mean(macros), np.std(macros))
+    micro_str = "Micro F1 Mean - {} | STD - {}".format(np.mean(micros), np.std(micros))
+    print(macro_str)
+    print(micro_str)
 
-            macro_str = "Macro F1 Mean - {} | STD - {}\n".format(np.mean(macros), np.std(macros))
-            micro_str = "Micro F1 Mean - {} | STD - {}".format(np.mean(micros), np.std(micros))
-            print(macro_str)
-            print(micro_str)
+    print('======================================================================')
 
-            print('======================================================================')
-
-            print(macro_str + micro_str)
+    print(macro_str + micro_str)
     print("Done")
 
 
