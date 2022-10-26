@@ -139,20 +139,39 @@ def run():
     output_path = 'outputs/'
     fused_model_path = 'outputs/fused_model/'
     fused_finetuned_model_path = 'outputs/fused_finetuned_model/'
+
     train_args = {
-        'evaluate_during_training': True,
-        'logging_steps': 1000,
-        'num_train_epochs': 5,
-        'evaluate_during_training_steps': 100,
-        'save_eval_checkpoints': False,
-        # 'manual_seed': 888888,
-        # 'manual_seed': 777,
+        "overwrite_output_dir": True,
+        'output_dir': output_path,
+        "max_seq_length": 512,
+        "eval_batch_size": 32,
+        "use_multiprocessing": False,
+        "num_beams": None,
+        "do_sample": True,
+        "max_length": 50,
+        "top_k": 50,
+        "top_p": 0.95,
+        "num_return_sequences": 3,
         'train_batch_size': 32,
         'eval_batch_size': 8,
-        'overwrite_output_dir': True,
-        'output_dir': output_path
-
+        'save_eval_checkpoints': False,
+        'evaluate_during_training': True,
     }
+
+    # train_args = {
+    #     'evaluate_during_training': True,
+    #     'logging_steps': 1000,
+    #     'num_train_epochs': 5,
+    #     'evaluate_during_training_steps': 100,
+    #     'save_eval_checkpoints': False,
+    #     # 'manual_seed': 888888,
+    #     # 'manual_seed': 777,
+    #     'train_batch_size': 32,
+    #     'eval_batch_size': 8,
+    #     'overwrite_output_dir': True,
+    #     'output_dir': output_path
+    #
+    # }
 
     if torch.cuda.is_available():
         torch.device('cuda')
@@ -160,6 +179,7 @@ def run():
     # ========================================================================
     # training data preparation
     print('training started')
+    args = T5Args()
     model_paths = []
     for i in range(0, n_models):
         model_path = output_path + 'model_' + str(i)
@@ -249,7 +269,7 @@ def run():
                 for i in range(0, n_models):
                     test_list = []
                     for test_sample, test_label in zip(test_text_splits[i], test_label_splits[i]):
-                        test_list.append([TASK_NAME + ":" + test_sample])
+                        test_list.append([TASK_NAME + ": " + test_sample])
 
                     raw_outputs = fine_tuned_model.predict(test_list)
                     probabilities = softmax(raw_outputs, axis=1)
