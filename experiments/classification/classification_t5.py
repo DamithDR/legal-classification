@@ -152,7 +152,7 @@ def run():
         "top_k": 50,
         "top_p": 0.95,
         "num_return_sequences": 3,
-        'train_batch_size': 16,
+        'train_batch_size': 8,
         'eval_batch_size': 8,
         'save_eval_checkpoints': False,
         'evaluate_during_training': True,
