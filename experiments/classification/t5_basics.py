@@ -31,7 +31,7 @@ eval_df.columns = ["prefix", "input_text", "target_text"]
 
 # Configure the model
 model_args = T5Args()
-model_args.num_train_epochs = 200
+model_args.num_train_epochs = 5
 model_args.no_save = True
 model_args.evaluate_generated_text = True
 model_args.evaluate_during_training = True
