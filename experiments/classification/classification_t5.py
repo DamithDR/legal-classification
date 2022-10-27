@@ -1,24 +1,17 @@
 import argparse
-import json
 import logging
-import os
-from contextlib import redirect_stdout
 
 import numpy as np
 import pandas as pd
 import torch.cuda
-from scipy.special import softmax
-from simpletransformers.classification import ClassificationModel
-from simpletransformers.config.model_args import T5Args
+import torch.multiprocessing
+from datasets import load_dataset
 from simpletransformers.t5 import T5Model
 from sklearn.model_selection import train_test_split
 from transformers import AutoTokenizer
 
 from fuse.main_model_fuse_t5 import ModelLoadingInfoT5, load_model, fuse_models
 from utils.print_stat import print_information
-from datasets import load_dataset
-
-import torch.multiprocessing
 
 # otherwise the shared memory is not enough so it throws an error
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -94,7 +87,7 @@ def run():
     parser.add_argument('--no_of_models', required=True, help='no of models to fuse', default=3)
     parser.add_argument('--n_fold', required=True, help='n_fold predictions', default=3)
     parser.add_argument('--base_model', required=False, help='n_fold predictions',
-                        default='t5-base')
+                        default='t5-small')
     arguments = parser.parse_args()
     n_models = int(arguments.no_of_models)
     n_fold = int(arguments.n_fold)
@@ -162,93 +155,93 @@ def run():
         torch.cuda.set_device(int(arguments.device_number))
     # ========================================================================
     # training data preparation
-    # print('training started')
-    # model_paths = []
-    # for i in range(0, n_models):
-    #     model_path = output_path + 'model_' + str(i)
-    #     df_train = pd.DataFrame({'input_text': training_text_splits[i], 'target_text': training_label_splits[i]})
-    #     df_train['target_text'] = df_train['target_text'].apply(str)
-    #     df_eval = pd.DataFrame({'input_text': dev_text_splits[i], 'target_text': dev_label_splits[i]})
-    #     df_eval['target_text'] = df_eval['target_text'].apply(str)
-    #     df_train['prefix'] = TASK_NAME
-    #     df_eval['prefix'] = TASK_NAME
-    #     # full_df = pd.concat([df_train, df_eval])
-    #     # df_train, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
-    #     train_args['best_model_dir'] = model_path
-    #     model_paths.append(model_path)
-    #     # training_df = pd.DataFrame()
-    #     # development_df = pd.DataFrame()
-    #     # for train_sample, train_label in zip(training_text_splits[i], training_label_splits[i]):
-    #     #     training_df.append([TASK_NAME, train_sample, train_label])
-    #     # for dev_sample, dev_label in zip(dev_text_splits[i], dev_label_splits[i]):
-    #     #     development_df.append([TASK_NAME, dev_sample, dev_label])
-    #
-    #     model = T5Model(
-    #         "t5",
-    #         arguments.base_model,
-    #         use_cuda=torch.cuda.is_available(),
-    #         args=train_args
-    #     )
-    #
-    #     model.train_model(df_train, eval_data=df_eval)
-    #
-    #     model.save_model(output_dir=model_path)
-    #     print('model saved')
-    # print('split models saving finished')
-    #
-    # # ========================================================================
-    #
-    # model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
-    # # # fusing multiple models
-    # print('model fusing started')
-    # model_load = ModelLoadingInfoT5(name=arguments.base_model, tokenizer_name=arguments.base_model,
-    #                               classification=True)
-    # models_to_fuse = [ModelLoadingInfoT5(name=model, tokenizer_name=model, classification=True) for model in model_paths]
-    # base_model = load_model(model_load)
-    # fused_model = fuse_models(base_model, models_to_fuse)
-    # # saving fused model for predictions
-    # fused_model.save_pretrained(fused_model_path)
-    # tokenizer = AutoTokenizer.from_pretrained(arguments.base_model)
-    # tokenizer.save_pretrained(fused_model_path)
-    # print('fused model saved')
-    #
-    # # load the saved model
-    # train_args['best_model_dir'] = fused_finetuned_model_path
-    # train_args['learning_rate'] = 1e-04
-    #
-    # general_model = T5Model(
-    #     "t5",
-    #     fused_model_path,
-    #     use_cuda=torch.cuda.is_available(),
-    #     args=train_args
-    # )
-    #
-    # df_eval = pd.DataFrame()
-    # df_finetune_training = pd.DataFrame()
-    #
-    # # further fine tuning - this step is important
-    # for i in range(0, n_models):
-    #     training_chunk = pd.DataFrame({'input_text': finetune_text_splits[i], 'target_text': finetune_label_splits[i]})
-    #     eval_chunk = pd.DataFrame({'input_text': dev_text_splits[i], 'target_text': dev_label_splits[i]})
-    #     df_finetune_training = pd.concat([df_finetune_training, training_chunk])
-    #     df_eval = pd.concat([df_eval, eval_chunk])
-    #
-    # df_finetune_training['prefix'] = TASK_NAME
-    # df_eval['prefix'] = TASK_NAME
-    # df_finetune_training['target_text'] = df_finetune_training['target_text'].apply(str)
-    # df_eval['target_text'] = df_eval['target_text'].apply(str)
-    #
-    # general_model.train_model(df_finetune_training, eval_data=df_eval)
-    # general_model.save_model(output_dir=fused_finetuned_model_path)
+    print('training started')
+    model_paths = []
+    for i in range(0, n_models):
+        model_path = output_path + 'model_' + str(i)
+        df_train = pd.DataFrame({'input_text': training_text_splits[i], 'target_text': training_label_splits[i]})
+        df_train['target_text'] = df_train['target_text'].apply(str)
+        df_eval = pd.DataFrame({'input_text': dev_text_splits[i], 'target_text': dev_label_splits[i]})
+        df_eval['target_text'] = df_eval['target_text'].apply(str)
+        df_train['prefix'] = TASK_NAME
+        df_eval['prefix'] = TASK_NAME
+        # full_df = pd.concat([df_train, df_eval])
+        # df_train, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
+        train_args['best_model_dir'] = model_path
+        model_paths.append(model_path)
+        # training_df = pd.DataFrame()
+        # development_df = pd.DataFrame()
+        # for train_sample, train_label in zip(training_text_splits[i], training_label_splits[i]):
+        #     training_df.append([TASK_NAME, train_sample, train_label])
+        # for dev_sample, dev_label in zip(dev_text_splits[i], dev_label_splits[i]):
+        #     development_df.append([TASK_NAME, dev_sample, dev_label])
 
-    # fine_tuned_model = general_model  # to use directly
-    fine_tuned_model = T5Model(
+        model = T5Model(
+            "t5",
+            arguments.base_model,
+            use_cuda=torch.cuda.is_available(),
+            args=train_args
+        )
+
+        model.train_model(df_train, eval_data=df_eval)
+
+        model.save_model(output_dir=model_path)
+        print('model saved')
+    print('split models saving finished')
+
+    # ========================================================================
+
+    model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
+    # # fusing multiple models
+    print('model fusing started')
+    model_load = ModelLoadingInfoT5(name=arguments.base_model, tokenizer_name=arguments.base_model,
+                                  classification=True)
+    models_to_fuse = [ModelLoadingInfoT5(name=model, tokenizer_name=model, classification=True) for model in model_paths]
+    base_model = load_model(model_load)
+    fused_model = fuse_models(base_model, models_to_fuse)
+    # saving fused model for predictions
+    fused_model.save_pretrained(fused_model_path)
+    tokenizer = AutoTokenizer.from_pretrained(arguments.base_model)
+    tokenizer.save_pretrained(fused_model_path)
+    print('fused model saved')
+
+    # load the saved model
+    train_args['best_model_dir'] = fused_finetuned_model_path
+    train_args['learning_rate'] = 1e-04
+
+    general_model = T5Model(
         "t5",
-        fused_finetuned_model_path,
-        # "t5-small",
+        fused_model_path,
         use_cuda=torch.cuda.is_available(),
         args=train_args
     )
+
+    df_eval = pd.DataFrame()
+    df_finetune_training = pd.DataFrame()
+
+    # further fine tuning - this step is important
+    for i in range(0, n_models):
+        training_chunk = pd.DataFrame({'input_text': finetune_text_splits[i], 'target_text': finetune_label_splits[i]})
+        eval_chunk = pd.DataFrame({'input_text': dev_text_splits[i], 'target_text': dev_label_splits[i]})
+        df_finetune_training = pd.concat([df_finetune_training, training_chunk])
+        df_eval = pd.concat([df_eval, eval_chunk])
+
+    df_finetune_training['prefix'] = TASK_NAME
+    df_eval['prefix'] = TASK_NAME
+    df_finetune_training['target_text'] = df_finetune_training['target_text'].apply(str)
+    df_eval['target_text'] = df_eval['target_text'].apply(str)
+
+    general_model.train_model(df_finetune_training, eval_data=df_eval)
+    general_model.save_model(output_dir=fused_finetuned_model_path)
+
+    fine_tuned_model = general_model  # to use directly
+    # fine_tuned_model = T5Model(
+    #     "t5",
+    #     fused_finetuned_model_path,
+    #     # "t5-small",
+    #     use_cuda=torch.cuda.is_available(),
+    #     args=train_args
+    # )
 
     print('Starting Predictions')
     macros = []
@@ -256,66 +249,66 @@ def run():
 
     # with open('out.txt', 'w') as f:
     #     with redirect_stdout(f):
-    # for fold in range(0, n_fold):
-    #     # predictions
-    #     print('Starting Prediction fold no : ' + str(fold))
-    #
-    #     results = []
-    #     for i in range(0, n_models):
-    #         test_list = []
-    #         for test_sample, test_label in zip(test_text_splits[i], test_label_splits[i]):
-    #             test_row = TASK_NAME + ":" + test_sample
-    #             test_list.append(test_row)
-    #
-    #         raw_outputs = fine_tuned_model.predict(test_list)
-    #         # probabilities = softmax(raw_outputs, axis=1)
-    #
-    #         # for id_score, zero_score, one_score in zip(test_id_splits[i], list(probabilities[:, 0]),
-    #         #                                            list(probabilities[:, 1])):
-    #         #     results.append((id_score, zero_score, one_score))
-    #         for id_score, prediction in zip(test_id_splits[i], raw_outputs):
-    #             try:
-    #                 results.append((id_score, int(prediction)))
-    #             except:
-    #                 print("wrong output cannot convert to int " + prediction)
-    #                 print("An exception occurred")
-    #
-    #     score_results = pd.DataFrame(results, columns=['ids', 'prediction'])
-    #     # final_scores = score_results.groupby(by=['ids']).mean()
-    #     final_scores = score_results.groupby(by=['ids']).max()
-    #
-    #     # final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
-    #     # final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
-    #
-    #     gold_answers = []
-    #     for doc_id in final_scores.index:
-    #         ans = test_df.loc[test_df.index == doc_id, 'labels']
-    #         gold_answers.append(list(ans)[0])
-    #     final_scores['gold'] = gold_answers
-    #
-    #     macro_f1, micro_f1 = print_information(final_scores, 'prediction', 'gold')
-    #     macros.append(macro_f1)
-    #     micros.append(micro_f1)
+    for fold in range(0, n_fold):
+        # predictions
+        print('Starting Prediction fold no : ' + str(fold))
 
-    to_predict = [
-        "binary classification:Luke blew up the first Death Star",
-        "binary classification:In 1971, George Lucas wanted to film an adaptation of the Flash Gordon serial, but could not obtain the rights, so he began developing his own space opera.",
-    ]
-    prediction = fine_tuned_model.predict(to_predict)
-    print(prediction)
+        results = []
+        for i in range(0, n_models):
+            test_list = []
+            for test_sample, test_label in zip(test_text_splits[i], test_label_splits[i]):
+                test_row = TASK_NAME + ":" + test_sample
+                test_list.append(test_row)
 
-    # print('Final Results')
-    # print('=====================================================================')
-    #
-    # macro_str = "Macro F1 Mean - {} | STD - {}\n".format(np.mean(macros), np.std(macros))
-    # micro_str = "Micro F1 Mean - {} | STD - {}".format(np.mean(micros), np.std(micros))
-    # print(macro_str)
-    # print(micro_str)
-    #
-    # print('======================================================================')
-    #
-    # print(macro_str + micro_str)
-    # print("Done")
+            raw_outputs = fine_tuned_model.predict(test_list)
+            # probabilities = softmax(raw_outputs, axis=1)
+
+            # for id_score, zero_score, one_score in zip(test_id_splits[i], list(probabilities[:, 0]),
+            #                                            list(probabilities[:, 1])):
+            #     results.append((id_score, zero_score, one_score))
+            for id_score, prediction in zip(test_id_splits[i], raw_outputs):
+                try:
+                    results.append((id_score, int(prediction)))
+                except:
+                    print("wrong output cannot convert to int " + prediction)
+                    print("An exception occurred")
+
+        score_results = pd.DataFrame(results, columns=['ids', 'prediction'])
+        # final_scores = score_results.groupby(by=['ids']).mean()
+        final_scores = score_results.groupby(by=['ids']).max()
+
+        # final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
+        # final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
+
+        gold_answers = []
+        for doc_id in final_scores.index:
+            ans = test_df.loc[test_df.index == doc_id, 'labels']
+            gold_answers.append(list(ans)[0])
+        final_scores['gold'] = gold_answers
+
+        macro_f1, micro_f1 = print_information(final_scores, 'prediction', 'gold')
+        macros.append(macro_f1)
+        micros.append(micro_f1)
+
+    # to_predict = [
+    #     "binary classification:Luke blew up the first Death Star",
+    #     "binary classification:In 1971, George Lucas wanted to film an adaptation of the Flash Gordon serial, but could not obtain the rights, so he began developing his own space opera.",
+    # ]
+    # prediction = fine_tuned_model.predict(to_predict)
+    # print(prediction)
+
+    print('Final Results')
+    print('=====================================================================')
+
+    macro_str = "Macro F1 Mean - {} | STD - {}\n".format(np.mean(macros), np.std(macros))
+    micro_str = "Micro F1 Mean - {} | STD - {}".format(np.mean(micros), np.std(micros))
+    print(macro_str)
+    print(micro_str)
+
+    print('======================================================================')
+
+    print(macro_str + micro_str)
+    print("Done")
 
 
 if __name__ == '__main__':
