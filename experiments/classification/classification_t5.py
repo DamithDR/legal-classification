@@ -150,7 +150,7 @@ def run():
         "max_length": 50,
         "top_k": 50,
         "top_p": 0.95,
-        "num_return_sequences": 1,
+        # "num_return_sequences": 1,
         'train_batch_size': 8,
         'eval_batch_size': 8,
         'save_eval_checkpoints': False,
@@ -256,59 +256,66 @@ def run():
 
     # with open('out.txt', 'w') as f:
     #     with redirect_stdout(f):
-    for fold in range(0, n_fold):
-        # predictions
-        print('Starting Prediction fold no : ' + str(fold))
+    # for fold in range(0, n_fold):
+    #     # predictions
+    #     print('Starting Prediction fold no : ' + str(fold))
+    #
+    #     results = []
+    #     for i in range(0, n_models):
+    #         test_list = []
+    #         for test_sample, test_label in zip(test_text_splits[i], test_label_splits[i]):
+    #             test_row = TASK_NAME + ":" + test_sample
+    #             test_list.append(test_row)
+    #
+    #         raw_outputs = fine_tuned_model.predict(test_list)
+    #         # probabilities = softmax(raw_outputs, axis=1)
+    #
+    #         # for id_score, zero_score, one_score in zip(test_id_splits[i], list(probabilities[:, 0]),
+    #         #                                            list(probabilities[:, 1])):
+    #         #     results.append((id_score, zero_score, one_score))
+    #         for id_score, prediction in zip(test_id_splits[i], raw_outputs):
+    #             try:
+    #                 results.append((id_score, int(prediction)))
+    #             except:
+    #                 print("wrong output cannot convert to int " + prediction)
+    #                 print("An exception occurred")
+    #
+    #     score_results = pd.DataFrame(results, columns=['ids', 'prediction'])
+    #     # final_scores = score_results.groupby(by=['ids']).mean()
+    #     final_scores = score_results.groupby(by=['ids']).max()
+    #
+    #     # final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
+    #     # final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
+    #
+    #     gold_answers = []
+    #     for doc_id in final_scores.index:
+    #         ans = test_df.loc[test_df.index == doc_id, 'labels']
+    #         gold_answers.append(list(ans)[0])
+    #     final_scores['gold'] = gold_answers
+    #
+    #     macro_f1, micro_f1 = print_information(final_scores, 'prediction', 'gold')
+    #     macros.append(macro_f1)
+    #     micros.append(micro_f1)
 
-        results = []
-        for i in range(0, n_models):
-            test_list = []
-            for test_sample, test_label in zip(test_text_splits[i], test_label_splits[i]):
-                test_row = TASK_NAME + ":" + test_sample
-                test_list.append(test_row)
+    to_predict = [
+        "binary classification:Luke blew up the first Death Star",
+        "binary classification:In 1971, George Lucas wanted to film an adaptation of the Flash Gordon serial, but could not obtain the rights, so he began developing his own space opera.",
+    ]
+    prediction = fine_tuned_model.predict(to_predict)
+    print(prediction)
 
-            raw_outputs = fine_tuned_model.predict(test_list)
-            # probabilities = softmax(raw_outputs, axis=1)
-
-            # for id_score, zero_score, one_score in zip(test_id_splits[i], list(probabilities[:, 0]),
-            #                                            list(probabilities[:, 1])):
-            #     results.append((id_score, zero_score, one_score))
-            for id_score, prediction in zip(test_id_splits[i], raw_outputs):
-                try:
-                    results.append((id_score, int(prediction)))
-                except:
-                    print("wrong output cannot convert to int " + prediction)
-                    print("An exception occurred")
-
-        score_results = pd.DataFrame(results, columns=['ids', 'prediction'])
-        # final_scores = score_results.groupby(by=['ids']).mean()
-        final_scores = score_results.groupby(by=['ids']).max()
-
-        # final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
-        # final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
-
-        gold_answers = []
-        for doc_id in final_scores.index:
-            ans = test_df.loc[test_df.index == doc_id, 'labels']
-            gold_answers.append(list(ans)[0])
-        final_scores['gold'] = gold_answers
-
-        macro_f1, micro_f1 = print_information(final_scores, 'prediction', 'gold')
-        macros.append(macro_f1)
-        micros.append(micro_f1)
-
-    print('Final Results')
-    print('=====================================================================')
-
-    macro_str = "Macro F1 Mean - {} | STD - {}\n".format(np.mean(macros), np.std(macros))
-    micro_str = "Micro F1 Mean - {} | STD - {}".format(np.mean(micros), np.std(micros))
-    print(macro_str)
-    print(micro_str)
-
-    print('======================================================================')
-
-    print(macro_str + micro_str)
-    print("Done")
+    # print('Final Results')
+    # print('=====================================================================')
+    #
+    # macro_str = "Macro F1 Mean - {} | STD - {}\n".format(np.mean(macros), np.std(macros))
+    # micro_str = "Micro F1 Mean - {} | STD - {}".format(np.mean(micros), np.std(micros))
+    # print(macro_str)
+    # print(micro_str)
+    #
+    # print('======================================================================')
+    #
+    # print(macro_str + micro_str)
+    # print("Done")
 
 
 if __name__ == '__main__':
