@@ -144,10 +144,11 @@ def run():
         "top_k": 50,
         "top_p": 0.95,
         # "num_return_sequences": 1,
-        'train_batch_size': 8,
+        'train_batch_size': 16,
         'eval_batch_size': 8,
         'save_eval_checkpoints': False,
         'evaluate_during_training': True,
+        'num_train_epochs': 5
     }
 
     if torch.cuda.is_available():
