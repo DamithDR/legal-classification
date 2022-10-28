@@ -91,7 +91,7 @@ def run():
     parser.add_argument('--n_fold', required=True, help='n_fold predictions', default=3)
     parser.add_argument('--base_model', required=False, help='n_fold predictions',
                         default='nlpaueb/legal-bert-base-uncased')
-    parser.add_argument('--mode_type', required=False, help='type of the model', default='bert')
+    parser.add_argument('--model_type', required=False, help='type of the model', default='bert')
     arguments = parser.parse_args()
     n_models = int(arguments.no_of_models)
     n_fold = int(arguments.n_fold)
