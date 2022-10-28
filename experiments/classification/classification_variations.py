@@ -91,6 +91,7 @@ def run():
     parser.add_argument('--n_fold', required=True, help='n_fold predictions', default=3)
     parser.add_argument('--base_model', required=False, help='n_fold predictions',
                         default='nlpaueb/legal-bert-base-uncased')
+    parser.add_argument('--mode_type', required=False, help='type of the model', default='bert')
     arguments = parser.parse_args()
     n_models = int(arguments.no_of_models)
     n_fold = int(arguments.n_fold)
@@ -166,7 +167,7 @@ def run():
         train_args['best_model_dir'] = model_path
         model_paths.append(model_path)
         model = ClassificationModel(
-            "bert", arguments.base_model, use_cuda=torch.cuda.is_available(),
+            arguments.model_type, arguments.base_model, use_cuda=torch.cuda.is_available(),
             args=train_args
         )
 
@@ -197,7 +198,7 @@ def run():
     train_args['learning_rate'] = 1e-04
 
     general_model = ClassificationModel(
-        "bert", fused_model_path, use_cuda=torch.cuda.is_available(), args=train_args
+        arguments.model_type, fused_model_path, use_cuda=torch.cuda.is_available(), args=train_args
     )
 
     df_eval = pd.DataFrame()
@@ -218,7 +219,7 @@ def run():
     fine_tuned_model = general_model  # to use directly
     #
     # fine_tuned_model = ClassificationModel(
-    #     "bert", fused_finetuned_model_path, use_cuda=torch.cuda.is_available(), args=train_args
+    #     arguments.model_type, fused_finetuned_model_path, use_cuda=torch.cuda.is_available(), args=train_args
     # )
 
     print('Starting Predictions')
