@@ -148,7 +148,7 @@ def run():
         'eval_batch_size': 8,
         'save_eval_checkpoints': False,
         'evaluate_during_training': True,
-        'num_train_epochs': 5
+        'num_train_epochs': 25
     }
 
     if torch.cuda.is_available():
@@ -233,7 +233,7 @@ def run():
     df_eval['target_text'] = df_eval['target_text'].apply(str)
 
     general_model.train_model(df_finetune_training, eval_data=df_eval)
-    general_model.save_model(output_dir=fused_finetuned_model_path)
+    # general_model.save_model(output_dir=fused_finetuned_model_path)
 
     fine_tuned_model = general_model  # to use directly
     # fine_tuned_model = T5Model(
