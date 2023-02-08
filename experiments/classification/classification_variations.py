@@ -19,7 +19,7 @@ from datasets import load_dataset
 import torch.multiprocessing
 
 # otherwise the shared memory is not enough so it throws an error
-torch.multiprocessing.set_sharing_strategy('file_system')
+# torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 def sep_text_to_regions(df, n_models=3):
@@ -142,6 +142,8 @@ def run():
         'num_train_epochs': 5,
         'evaluate_during_training_steps': 100,
         'save_eval_checkpoints': False,
+        'use_multiprocessing': False,
+        'use_multiprocessing_for_evaluation': False,
         # 'manual_seed': 888888,
         # 'manual_seed': 777,
         'train_batch_size': 32,
@@ -173,7 +175,6 @@ def run():
 
         model.train_model(df_train, eval_df=df_eval)
 
-        model.save_model(output_dir=model_path)
         print('model saved')
     print('split models saving finished')
     #
@@ -245,8 +246,8 @@ def run():
                         results.append((id_score, zero_score, one_score))
 
                 score_results = pd.DataFrame(results, columns=['ids', 'scores_0', 'scores_1'])
-                # final_scores = score_results.groupby(by=['ids']).mean()
-                final_scores = score_results.groupby(by=['ids']).max()
+                final_scores = score_results.groupby(by=['ids']).mean()
+                # final_scores = score_results.groupby(by=['ids']).max()
 
                 final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
                 final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
