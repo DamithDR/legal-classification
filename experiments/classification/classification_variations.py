@@ -18,6 +18,7 @@ from datasets import load_dataset
 
 import torch.multiprocessing
 
+
 # otherwise the shared memory is not enough so it throws an error
 # torch.multiprocessing.set_sharing_strategy('file_system')
 
@@ -90,38 +91,53 @@ def run():
     parser.add_argument('--no_of_models', required=True, help='no of models to fuse', default=3)
     parser.add_argument('--n_fold', required=True, help='n_fold predictions', default=3)
     parser.add_argument('--base_model', required=False, help='n_fold predictions',
-                        default='nlpaueb/legal-bert-base-uncased')
+                        default='bert-base-cased')
+
+    parser.add_argument('--dataset', required=False, help='dataset for predictions', default='ecthr_cases')
     parser.add_argument('--model_type', required=False, help='type of the model', default='bert')
     arguments = parser.parse_args()
     n_models = int(arguments.no_of_models)
     n_fold = int(arguments.n_fold)
+    dataset = arguments.dataset
 
     print('data loading started')
 
-    dataset = load_dataset("ecthr_cases")
+    # datasets : SetFit/20_newsgroups, ecthr_cases , hyperpartisan_news_detection
     train_labels = []
     test_labels = []
     dev_labels = []
-    for rational in dataset['train']['silver_rationales']:
-        if len(rational) > 0:
-            train_labels.append(1)
-        else:
-            train_labels.append(0)
-    for rational in dataset['test']['silver_rationales']:
-        if len(rational) > 0:
-            test_labels.append(1)
-        else:
-            test_labels.append(0)
-    for rational in dataset['validation']['silver_rationales']:
-        if len(rational) > 0:
-            dev_labels.append(1)
-        else:
-            dev_labels.append(0)
 
-    train_df = pd.DataFrame({'text': dataset['train']['facts'], 'labels': train_labels})
-    train_df, df_finetune = train_test_split(train_df, test_size=0.2)
-    test_df = pd.DataFrame({'text': dataset['test']['facts'], 'labels': test_labels})
-    dev_df = pd.DataFrame({'text': dataset['validation']['facts'], 'labels': dev_labels})
+    if dataset.__eq__('ecthr_cases'):
+        dataset = load_dataset(dataset)
+        for rational in dataset['train']['silver_rationales']:
+            if len(rational) > 0:
+                train_labels.append(1)
+            else:
+                train_labels.append(0)
+        for rational in dataset['test']['silver_rationales']:
+            if len(rational) > 0:
+                test_labels.append(1)
+            else:
+                test_labels.append(0)
+        for rational in dataset['validation']['silver_rationales']:
+            if len(rational) > 0:
+                dev_labels.append(1)
+            else:
+                dev_labels.append(0)
+        train_df = pd.DataFrame({'text': dataset['train']['facts'], 'labels': train_labels})
+        train_df, df_finetune = train_test_split(train_df, test_size=0.2)
+        test_df = pd.DataFrame({'text': dataset['test']['facts'], 'labels': test_labels})
+        dev_df = pd.DataFrame({'text': dataset['validation']['facts'], 'labels': dev_labels})
+    elif dataset.__eq__('hyperpartisan_news_detection'):
+        dataset = load_dataset(dataset, 'bypublisher')
+
+        train_df = pd.DataFrame(
+            {'text': dataset.data['train']['text'], 'labels': dataset.data['train']["hyperpartisan"]})
+        train_df, df_finetune = train_test_split(train_df, test_size=0.2,random_state=777)
+        df_finetune, dev_df = train_test_split(df_finetune,test_size=0.5,random_state=777)
+        test_df = pd.DataFrame(
+            {'text': dataset.data['validation']['text'], 'labels': dataset.data['validation']["hyperpartisan"]})
+        print('hyperpartisan_news_detection')
 
     print('data loading finished starting data chunking')
 
