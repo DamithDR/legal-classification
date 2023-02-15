@@ -138,6 +138,11 @@ def run():
         test_df = pd.DataFrame(
             {'text': dataset.data['validation']['text'], 'labels': dataset.data['validation']["hyperpartisan"]})
         print('hyperpartisan_news_detection')
+    elif dataset.__eq__('20_news_categories'):
+        dataset = pd.read_csv('/data/processed/20news.csv')
+        train_df,test_df = train_test_split(dataset, test_size=0.2, random_state=777)
+        train_df, df_finetune = train_test_split(train_df, test_size=0.2, random_state=777)
+        df_finetune, dev_df = train_test_split(df_finetune, test_size=0.5, random_state=777)
 
     print('data loading finished starting data chunking')
 
