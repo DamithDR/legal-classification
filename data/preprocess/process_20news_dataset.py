@@ -1,6 +1,5 @@
 import os
 
-import pandas as pd
 from pandas import DataFrame
 
 file_path = 'D:\DataSets\\20news-18828\\'

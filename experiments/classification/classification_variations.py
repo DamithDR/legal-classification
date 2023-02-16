@@ -142,10 +142,20 @@ def run():
             {'text': dataset.data['validation']['text'], 'labels': dataset.data['validation']["hyperpartisan"]})
         print('hyperpartisan_news_detection')
     elif dataset.__eq__('20_news_categories'):
-        dataset = pd.read_csv('data/processed/20news.csv', sep='\t')
+        dataset = pd.read_csv('data/processed/20news/20news.csv', sep='\t')
         train_df, test_df = train_test_split(dataset, test_size=0.2, random_state=777)
         train_df, df_finetune = train_test_split(train_df, test_size=0.2, random_state=777)
         df_finetune, dev_df = train_test_split(df_finetune, test_size=0.5, random_state=777)
+    elif dataset.__eq__('ECHR'):
+        train_df = pd.read_csv('data/processed/echr/ECHR_train.csv', sep='\t')
+        test_df = pd.read_csv('data/processed/echr/ECHR_test.csv', sep='\t')
+        dev_df = pd.read_csv('data/processed/echr/ECHR_dev.csv', sep='\t')
+        dev_df, df_finetune = train_test_split(dev_df, test_size=0.2, random_state=777)
+    elif dataset.__eq__('ECHR_Anon'):
+        train_df = pd.read_csv('data/processed/echr/ECHR_Anon_train.csv', sep='\t')
+        test_df = pd.read_csv('data/processed/echr/ECHR_Anon_test.csv', sep='\t')
+        dev_df = pd.read_csv('data/processed/echr/ECHR_Anon_dev.csv', sep='\t')
+        dev_df, df_finetune = train_test_split(dev_df, test_size=0.2, random_state=777)
 
     label_set = set(train_df['labels'].tolist())
     label_to_num_dict = {}
