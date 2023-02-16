@@ -105,12 +105,32 @@ def run():
     # datasets : SetFit/20_newsgroups, ecthr_cases , hyperpartisan_news_detection
 
     if dataset.__eq__('ecthr_cases'):
+        train_labels = []
+        test_labels = []
+        dev_labels = []
+        for rational in dataset['train']['silver_rationales']:
+            if len(rational) > 0:
+                train_labels.append(1)
+            else:
+                train_labels.append(0)
+        for rational in dataset['test']['silver_rationales']:
+            if len(rational) > 0:
+                test_labels.append(1)
+            else:
+                test_labels.append(0)
+        for rational in dataset['validation']['silver_rationales']:
+            if len(rational) > 0:
+                dev_labels.append(1)
+            else:
+                dev_labels.append(0)
+
         dataset = load_dataset(dataset)
-        train_df = pd.DataFrame({'text': dataset['train']['facts'], 'labels': dataset['train']['silver_rationales']})
+        train_df = pd.DataFrame({'text': dataset['train']['facts'], 'labels': train_labels})
         train_df, df_finetune = train_test_split(train_df, test_size=0.2)
-        test_df = pd.DataFrame({'text': dataset['test']['facts'], 'labels': dataset['test']['silver_rationales']})
+        test_df = pd.DataFrame({'text': dataset['test']['facts'], 'labels': test_labels})
         dev_df = pd.DataFrame(
-            {'text': dataset['validation']['facts'], 'labels': dataset['validation']['silver_rationales']})
+            {'text': dataset['validation']['facts'], 'labels': dev_labels})
+
     elif dataset.__eq__('hyperpartisan_news_detection'):
         dataset = load_dataset(dataset, 'bypublisher')
         train_df = pd.DataFrame(
