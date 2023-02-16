@@ -105,6 +105,7 @@ def run():
     # datasets : SetFit/20_newsgroups, ecthr_cases , hyperpartisan_news_detection
 
     if dataset.__eq__('ecthr_cases'):
+        dataset = load_dataset(dataset)
         train_labels = []
         test_labels = []
         dev_labels = []
@@ -124,7 +125,7 @@ def run():
             else:
                 dev_labels.append(0)
 
-        dataset = load_dataset(dataset)
+
         train_df = pd.DataFrame({'text': dataset['train']['facts'], 'labels': train_labels})
         train_df, df_finetune = train_test_split(train_df, test_size=0.2)
         test_df = pd.DataFrame({'text': dataset['test']['facts'], 'labels': test_labels})
