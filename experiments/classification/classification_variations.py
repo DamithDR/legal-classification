@@ -168,7 +168,7 @@ def run():
     train_args = {
         'evaluate_during_training': True,
         'logging_steps': 1000,
-        'num_train_epochs': 1,
+        'num_train_epochs': 3,
         'evaluate_during_training_steps': 100,
         'save_eval_checkpoints': False,
         'use_multiprocessing': False,
