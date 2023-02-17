@@ -125,7 +125,6 @@ def run():
             else:
                 dev_labels.append(0)
 
-
         train_df = pd.DataFrame({'text': dataset['train']['facts'], 'labels': train_labels})
         train_df, df_finetune = train_test_split(train_df, test_size=0.2)
         test_df = pd.DataFrame({'text': dataset['test']['facts'], 'labels': test_labels})
@@ -156,6 +155,11 @@ def run():
         test_df = pd.read_csv('data/processed/echr/ECHR_Anon_test.csv', sep='\t')
         dev_df = pd.read_csv('data/processed/echr/ECHR_Anon_dev.csv', sep='\t')
         dev_df, df_finetune = train_test_split(dev_df, test_size=0.2, random_state=777)
+    elif dataset.__eq__('case-2021'):
+        train_df = pd.read_json('data/processed/case-2021/train.json')
+        train_df, test_df = train_test_split(train_df, test_size=0.2, random_state=777)
+        train_df, dev_df = train_test_split(train_df, test_size=0.1, random_state=777)
+        train_df, df_finetune = train_test_split(dev_df, test_size=0.1, random_state=777)
 
     label_set = set(train_df['labels'].tolist())
     label_to_num_dict = {}

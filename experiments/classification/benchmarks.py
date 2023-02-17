@@ -77,6 +77,11 @@ def run():
         test_df = pd.read_csv('data/processed/echr/ECHR_Anon_test.csv', sep='\t')
         dev_df = pd.read_csv('data/processed/echr/ECHR_Anon_dev.csv', sep='\t')
         dev_df, df_finetune = train_test_split(dev_df, test_size=0.2, random_state=777)
+    elif dataset.__eq__('case-2021'):
+        train_df = pd.read_json('data/processed/case-2021/train.json')
+        train_df, test_df = train_test_split(train_df, test_size=0.2, random_state=777)
+        train_df, dev_df = train_test_split(train_df, test_size=0.1, random_state=777)
+        train_df, df_finetune = train_test_split(dev_df, test_size=0.1, random_state=777)
 
     train_args = {
         'evaluate_during_training': True,
