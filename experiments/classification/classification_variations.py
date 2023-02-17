@@ -94,11 +94,13 @@ def run():
                         default='bert-base-cased')
 
     parser.add_argument('--dataset', required=False, help='dataset for predictions', default='ecthr_cases')
+    parser.add_argument('--epoches', required=False, help='num_train_epochs', default=3)
     parser.add_argument('--model_type', required=False, help='type of the model', default='bert')
     arguments = parser.parse_args()
     n_models = int(arguments.no_of_models)
     n_fold = int(arguments.n_fold)
     dataset = arguments.dataset
+    train_epochs = int(arguments.epoches)
 
     print('data loading started')
 
@@ -204,7 +206,7 @@ def run():
     train_args = {
         'evaluate_during_training': True,
         'logging_steps': 1000,
-        'num_train_epochs': 3,
+        'num_train_epochs': train_epochs,
         'evaluate_during_training_steps': 100,
         'save_eval_checkpoints': False,
         'use_multiprocessing': False,
