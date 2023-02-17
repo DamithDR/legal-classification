@@ -13,16 +13,12 @@ def run():
     parser = argparse.ArgumentParser(
         description='''fuse multiple models ''')
     parser.add_argument('--device_number', required=False, help='cuda device number', default=0)
-    parser.add_argument('--no_of_models', required=True, help='no of models to fuse', default=3)
-    parser.add_argument('--n_fold', required=True, help='n_fold predictions', default=3)
     parser.add_argument('--base_model', required=False, help='n_fold predictions',
                         default='bert-base-cased')
 
     parser.add_argument('--dataset', required=False, help='dataset for predictions', default='ecthr_cases')
     parser.add_argument('--model_type', required=False, help='type of the model', default='bert')
     arguments = parser.parse_args()
-    n_models = int(arguments.no_of_models)
-    n_fold = int(arguments.n_fold)
     dataset = arguments.dataset
 
     print('data loading started')
