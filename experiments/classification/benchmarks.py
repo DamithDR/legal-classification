@@ -79,9 +79,10 @@ def run():
         dev_df, df_finetune = train_test_split(dev_df, test_size=0.2, random_state=777)
     elif dataset.__eq__('case-2021'):
         train_df = pd.read_json('data/processed/case-2021/train.json')
+        train_df = train_df.rename(columns={'label': 'labels'})
         train_df, test_df = train_test_split(train_df, test_size=0.2, random_state=777)
-        train_df, dev_df = train_test_split(train_df, test_size=0.1, random_state=777)
-        train_df, df_finetune = train_test_split(dev_df, test_size=0.1, random_state=777)
+        train_df, dev_df = train_test_split(train_df, test_size=0.2, random_state=777)
+        dev_df, df_finetune = train_test_split(dev_df, test_size=0.5, random_state=777)
 
     train_args = {
         'evaluate_during_training': True,
