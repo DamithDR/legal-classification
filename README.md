@@ -1,4 +1,4 @@
-# Long Document Classification usin Model Fusing
+# Long Document Classification using Model Fusing
 
 An emperical study on utilising model fusing for long document classification.
 
@@ -21,8 +21,8 @@ You can easily run experiments using following command and altering the paramete
 python -m experiments.classification.classification_variations --n_fold 1 --device_number 0 --no_of_models 3 --dataset ECHR
 ```
 
-## Benchmarking Results
-You can easily run benchmarking using following command and altering the parameters as you wish
+## Baseline Results
+You can easily run baselines using following command and altering the parameters as you wish
 
 ```bash
 python -m experiments.classification.benchmarks --device_number 0 --no_of_models 3 --dataset ECHR
@@ -47,6 +47,11 @@ ECHR                : European Court of Human Rights (ECHR) cases
 ECHR_Anon           : Anonymize version of ECHR dataset having named entities anonymised
 20_news_categories  : Dataset of 20 different news categories
 case-2021           : Dataset from the shared Task on Socio-political and Crisis Events Detection CASE - subtask 1.
+
+Note : Case-2021 dataset is not provided with this repository due to their restrictions of use of the data. 
+Please contact the team on : https://github.com/emerging-welfare/case-2022-multilingual-event and place the english
+dataset at data/processed/case-2021/ folder and make the data a Json list so that it can directly read using pandas.
+This way you can use the case-2021 dataset as well. 
 
 ```
 
