@@ -1,6 +1,4 @@
-python -m experiments.classification.classification_variations --device_number 1 --no_of_models 3 --n_fold 1 --dataset hyperpartisan_news_detection
 python -m experiments.classification.classification_variations --device_number 1 --no_of_models 3 --n_fold 1 --dataset 20_news_categories
-python -m experiments.classification.classification_variations --device_number 1 --no_of_models 3 --n_fold 1 --dataset ecthr_cases
 python -m experiments.classification.classification_variations --device_number 1 --no_of_models 3 --n_fold 1 --dataset ECHR
 python -m experiments.classification.classification_variations --device_number 1 --no_of_models 3 --n_fold 1 --dataset ECHR_Anon
 python -m experiments.classification.classification_variations --device_number 1 --no_of_models 3 --n_fold 1 --dataset case-2021

@@ -18,11 +18,6 @@ from datasets import load_dataset
 
 import torch.multiprocessing
 
-
-# otherwise the shared memory is not enough so it throws an error
-# torch.multiprocessing.set_sharing_strategy('file_system')
-
-
 def sep_text_to_regions(df, n_models=3):
     max_token_length = 400
 
@@ -94,7 +89,7 @@ def run():
                         default='bert-base-cased')
 
     parser.add_argument('--dataset', required=False, help='dataset for predictions', default='ecthr_cases')
-    parser.add_argument('--epoches', required=False, help='num_train_epochs', default=3)
+    parser.add_argument('--epochs', required=False, help='num_train_epochs', default=3)
     parser.add_argument('--model_type', required=False, help='type of the model', default='bert')
     arguments = parser.parse_args()
     n_models = int(arguments.no_of_models)
@@ -104,45 +99,7 @@ def run():
 
     print('data loading started')
 
-    # datasets : SetFit/20_newsgroups, ecthr_cases , hyperpartisan_news_detection
-
-    if dataset.__eq__('ecthr_cases'):
-        dataset = load_dataset(dataset)
-        train_labels = []
-        test_labels = []
-        dev_labels = []
-        for rational in dataset['train']['silver_rationales']:
-            if len(rational) > 0:
-                train_labels.append(1)
-            else:
-                train_labels.append(0)
-        for rational in dataset['test']['silver_rationales']:
-            if len(rational) > 0:
-                test_labels.append(1)
-            else:
-                test_labels.append(0)
-        for rational in dataset['validation']['silver_rationales']:
-            if len(rational) > 0:
-                dev_labels.append(1)
-            else:
-                dev_labels.append(0)
-
-        train_df = pd.DataFrame({'text': dataset['train']['facts'], 'labels': train_labels})
-        train_df, df_finetune = train_test_split(train_df, test_size=0.2)
-        test_df = pd.DataFrame({'text': dataset['test']['facts'], 'labels': test_labels})
-        dev_df = pd.DataFrame(
-            {'text': dataset['validation']['facts'], 'labels': dev_labels})
-
-    elif dataset.__eq__('hyperpartisan_news_detection'):
-        dataset = load_dataset(dataset, 'bypublisher')
-        train_df = pd.DataFrame(
-            {'text': dataset.data['train']['text'], 'labels': dataset.data['train']["hyperpartisan"]})
-        train_df, df_finetune = train_test_split(train_df, test_size=0.2, random_state=777)
-        df_finetune, dev_df = train_test_split(df_finetune, test_size=0.5, random_state=777)
-        test_df = pd.DataFrame(
-            {'text': dataset.data['validation']['text'], 'labels': dataset.data['validation']["hyperpartisan"]})
-        print('hyperpartisan_news_detection')
-    elif dataset.__eq__('20_news_categories'):
+    if dataset.__eq__('20_news_categories'):
         dataset = pd.read_csv('data/processed/20news/20news.csv', sep='\t')
         train_df, test_df = train_test_split(dataset, test_size=0.2, random_state=777)
         train_df, df_finetune = train_test_split(train_df, test_size=0.2, random_state=777)
@@ -175,19 +132,15 @@ def run():
 
     # encoding
     train_labels = []
-    test_labels = []
     dev_labels = []
     finetune_labels = []
     for train_label in train_df['labels']:
         train_labels.append(label_to_num_dict.get(train_label))
-    # for test_label in test_df['labels']:
-    #     test_labels.append(label_to_num_dict.get(test_label))
     for dev_label in dev_df['labels']:
         dev_labels.append(label_to_num_dict.get(dev_label))
     for finetune_label in df_finetune['labels']:
         finetune_labels.append(label_to_num_dict.get(finetune_label))
     train_df['labels'] = train_labels
-    # test_df['labels'] = test_labels
     dev_df['labels'] = dev_labels
     df_finetune['labels'] = finetune_labels
     print('data loading and encoding finished starting data chunking')
@@ -211,8 +164,6 @@ def run():
         'save_eval_checkpoints': False,
         'use_multiprocessing': False,
         'use_multiprocessing_for_evaluation': False,
-        # 'manual_seed': 888888,
-        # 'manual_seed': 777,
         'train_batch_size': 32,
         'eval_batch_size': 8,
         'overwrite_output_dir': True,
@@ -247,8 +198,6 @@ def run():
     print('split models saving finished')
 
     # ========================================================================
-
-    model_paths = ['outputs/model_0/', 'outputs/model_1/', 'outputs/model_2/']
     # # fusing multiple models
     print('model fusing started')
     roberta = ModelLoadingInfo(name=arguments.base_model, tokenizer_name=arguments.base_model,
@@ -279,19 +228,11 @@ def run():
         eval = pd.DataFrame({'text': dev_text_splits[i], 'labels': dev_label_splits[i]})
         df_eval = pd.concat([df_eval, eval])
         df_finetune_training = pd.concat([df_finetune_training, training_chunk])
-    # finetune model
-    # full_df = pd.concat([df_finetune_training, df_eval])
-    # df_finetune_training, df_eval = train_test_split(full_df, test_size=0.2, random_state=777)
 
     general_model.train_model(df_finetune_training, eval_df=df_eval)
     general_model.save_model(output_dir=fused_finetuned_model_path)
 
     fine_tuned_model = general_model  # to use directly
-
-    # fine_tuned_model = ClassificationModel(
-    #     arguments.model_type, fused_finetuned_model_path, use_cuda=torch.cuda.is_available(), num_labels=len(label_set),
-    #     args=train_args
-    # )
 
     print('Starting Predictions')
     macros = []
@@ -310,8 +251,6 @@ def run():
                         {'text': test_text_splits[i], 'labels': test_label_splits[i], 'id': test_id_splits[i]})
                     predictions, raw_outputs = fine_tuned_model.predict(df_test['text'].tolist())
                     probabilities = softmax(raw_outputs, axis=1)
-                    # for id_score, zero_score, one_score in zip(test_id_splits[i], list(probabilities[:, 0]),
-                    #                                            list(probabilities[:, 1])):
                     for id_score, probs in zip(test_id_splits[i], list(probabilities)):
                         results.append((id_score, *probs))
                 column_name_list = ['ids']
@@ -320,10 +259,6 @@ def run():
                 score_results = pd.DataFrame(results, columns=column_name_list)
                 final_scores = score_results.groupby(by=['ids']).mean()
 
-                # final_scores = score_results.groupby(by=['ids']).max()
-
-                # final_scores.loc[final_scores['scores_0'] <= final_scores['scores_1'], 'prediction'] = 1
-                # final_scores.loc[final_scores['scores_0'] > final_scores['scores_1'], 'prediction'] = 0
                 prediction_columns = final_scores.idxmax(axis=1)
 
                 prediction_columns = list(prediction_columns.astype('int32'))
