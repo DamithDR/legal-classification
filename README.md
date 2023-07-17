@@ -58,7 +58,7 @@ This way you can use the case-2021 dataset as well.
 ## Citation
 Please consider citing us if you use the code or paper. 
 ```bash
-@inproceedings{damith2022DTWquranqa,
+@inproceedings{damith2023fusinglongdoc,
   title={Can Model Fusing Help Transformers in Long Document Classification? An Empirical Study.},
   author={Damith Premasiri and Tharindu Ranasinghe and Ruslan Mitkov},
   booktitle={Proceedings of the 14th Conference Recent Advances In Natural Language Processing (RANLP)},
