@@ -55,22 +55,13 @@ This way you can use the case-2021 dataset as well.
 
 ```
 
-[//]: # (## Citation)
-
-[//]: # (Please consider citing us if you use the library or the code. )
-
-[//]: # (```bash)
-
-[//]: # (@inproceedings{damith2022DTWquranqa,)
-
-[//]: # (  title={DTW at Qur'an QA 2022: Utilising Transfer Learning with Transformers for Question Answering in a Low-resource Domain},)
-
-[//]: # (  author={Damith Premasiri and Tharindu Ranasinghe and Wajdi Zaghouani and Ruslan Mitkov},)
-
-[//]: # (  booktitle={Proceedings of the 5th Workshop on Open-Source Arabic Corpora and Processing Tools &#40;OSACT5&#41;.},)
-
-[//]: # (  year={2022})
-
-[//]: # (})
-
-[//]: # (```)
+## Citation
+Please consider citing us if you use the code or paper. 
+```bash
+@inproceedings{damith2022DTWquranqa,
+  title={Can Model Fusing Help Transformers in Long Document Classification? An Empirical Study.},
+  author={Damith Premasiri and Tharindu Ranasinghe and Ruslan Mitkov},
+  booktitle={Proceedings of the 14th Conference Recent Advances In Natural Language Processing (RANLP)},
+  year={2023}
+}
+```
